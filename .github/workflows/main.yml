@@ -52,7 +52,7 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL }}
         run: |
-          ansible-playbook infrastrure/provision.yml
+          ansible-playbook infrastructure/provision.yml
 
       # 4. Ansible 구성 실행 (Nginx 설치)
       - name: Run Ansible Configuration
@@ -61,4 +61,4 @@ jobs:
         run: |
           echo "Waiting for SSH to be ready on new instance..."
           sleep 30 # VM 부팅 및 SSH 데몬 시작 대기 (실제로는 더 나은 wait_for 모듈 사용 권장)
-          ansible-playbook configure.yml
+          ansible-playbook infrastructure/configure.yml
