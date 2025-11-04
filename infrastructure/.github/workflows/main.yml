@@ -1,0 +1,64 @@
+name: Deploy GCP Infrastructure with Ansible
+
+on:
+  push:
+    branches:
+      - main # (중요) 2-5단계에서 설정한 브랜치와 일치해야 함
+
+# (핵심) WIF를 위한 OIDC 토큰 발급 권한 부여
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # (핵심) 1. GCP 인증 (WIF 사용)
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          # GitHub Secrets에서 정보 가져오기
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+          # (선택) 이 단계를 통해 gcloud SDK가 인증됨
+          create_credentials_file: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Install Ansible and GCP Libraries
+        run: |
+          pip install ansible google-auth
+
+      # (핵심) 2. SSH 비공개 키 설정
+      # configure.yml이 SSH로 접속할 수 있도록 GitHub Secret의 비공개 키를 등록
+      - name: Setup SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+
+      # 3. Ansible 프로비저닝 실행 (VM 생성)
+      - name: Run Ansible Provisioning
+        env:
+          # 플레이북에서 사용할 수 있도록 환경 변수로 주입
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL }}
+        run: |
+          ansible-playbook provision.yml
+
+      # 4. Ansible 구성 실행 (Nginx 설치)
+      - name: Run Ansible Configuration
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          echo "Waiting for SSH to be ready on new instance..."
+          sleep 30 # VM 부팅 및 SSH 데몬 시작 대기 (실제로는 더 나은 wait_for 모듈 사용 권장)
+          ansible-playbook configure.yml

@@ -1,0 +1,16 @@
+- name: 웹 서버 구성
+  hosts: "tag_http_server" # provision.yml에서 설정한 태그로 호스트 그룹 자동 생성
+  become: yes # 'sudo' 권한으로 실행
+
+  tasks:
+    - name: Nginx 설치
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Nginx 시작
+      service:
+        name: nginx
+        state: started
+        enabled: yes

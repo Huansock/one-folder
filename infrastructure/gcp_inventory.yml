@@ -1,0 +1,8 @@
+plugin: google.cloud.gcp_compute
+auth_kind: application # (핵심) WIF 인증 사용
+projects:
+  - "{{ lookup('env', 'GCP_PROJECT_ID') }}"
+hostnames:
+  - name # VM 이름으로 호스트 식별
+compose:
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP # 외부 IP로 접속
