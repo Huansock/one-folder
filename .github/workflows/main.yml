@@ -36,7 +36,7 @@ jobs:
 
       - name: Install Ansible and GCP Libraries
         run: |
-          pip install ansible google-auth
+          pip install ansible google-auth requests
 
       # (핵심) 2. SSH 비공개 키 설정
       # configure.yml이 SSH로 접속할 수 있도록 GitHub Secret의 비공개 키를 등록
