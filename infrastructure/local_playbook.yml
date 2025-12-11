@@ -1,0 +1,44 @@
+- name: My first play
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    brew_list: "{{ lookup('file','brew_list.yml').splitlines() }}"
+
+  tasks:
+
+    - name: Assert that the OS is macOS
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == 'MacOSX'
+        fail_msg: "This playbook is only intended for macOS. Detected: {{ ansible_distribution }}"
+
+    - name: Check if Homebrew binary exists
+      ansible.builtin.stat:
+        path: /opt/homebrew/bin/brew
+      register: brew_binary_stat
+
+    - name: Assert that Homebrew is installed
+      ansible.builtin.assert:
+        that:
+          - brew_binary_stat.stat.exists
+        fail_msg: "You don't have brew installed at /opt/homebrew/bin/brew"
+
+    - name: Brew install
+      community.general.homebrew:
+        name: "{{item}}"
+        state: present
+      loop: "{{brew_list}}"
+
+    # dotfiles
+    - name: copy dotfiles 
+      ansible.builtin.copy:
+        src: "../dotfiles/.config/"
+        dest: "~/.config/"
+        mode: "0750"
+
+    - name: link zshrc file
+      ansible.builtin.lineinfile:
+        path: ~/.zshrc
+        line: "source ~/code/one-folder/dotfiles/.zshrc"
+        state: present
